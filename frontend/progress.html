@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Progress & Goals — MentorHub</title>
+  <link rel="stylesheet" href="css/global.css" />
+  <style>
+    .goals-summary { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px; }
+    @media(max-width:700px){.goals-summary{grid-template-columns:repeat(2,1fr);}}
+    .goal-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-xl); padding:24px; transition:var(--transition); }
+    .goal-card:hover { border-color:var(--border-hover); transform:translateY(-2px); }
+    .goal-card-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; }
+    .goal-title { font-weight:700; font-family:var(--font-display); font-size:1rem; }
+    .goal-desc { font-size:0.82rem; color:var(--text-secondary); margin:6px 0 14px; }
+    .goal-footer { display:flex; align-items:center; justify-content:space-between; margin-top:14px; }
+    .goal-date { font-size:0.78rem; color:var(--text-muted); }
+    .goal-actions { display:flex; gap:6px; }
+    .priority-dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; }
+    .priority-high { background:var(--accent-danger); }
+    .priority-medium { background:var(--accent-tertiary); }
+    .priority-low { background:var(--accent-success); }
+    /* Modal */
+    .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:var(--transition); }
+    .modal-overlay.open { opacity:1;pointer-events:all; }
+    .modal { background:var(--bg-card);border:1px solid var(--border-hover);border-radius:var(--radius-xl);padding:36px;width:90%;max-width:500px;max-height:90vh;overflow-y:auto;transform:translateY(20px) scale(0.97);transition:var(--transition); }
+    .modal-overlay.open .modal { transform:translateY(0) scale(1); }
+    .modal-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:24px; }
+    .modal-title { font-family:var(--font-display);font-size:1.3rem;font-weight:700; }
+    .modal-close { width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.06);display:grid;place-items:center;cursor:pointer; }
+    .slider { width:100%; accent-color:var(--accent-primary); }
+    .status-select { display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+    .status-btn { padding:6px 14px; border-radius:var(--radius-full); font-size:0.8rem; font-weight:600; cursor:pointer; border:1.5px solid var(--border); background:transparent; color:var(--text-secondary); transition:var(--transition); }
+    .status-btn.selected { border-color:var(--accent-primary); color:var(--accent-primary); background:rgba(108,99,255,0.1); }
+    .edit-btn { background:none; border:none; cursor:pointer; font-size:0.9rem; color:var(--text-muted); transition:var(--transition); padding:4px 6px; border-radius:6px; }
+    .edit-btn:hover { background:rgba(255,255,255,0.06); color:var(--text-primary); }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand"><div class="brand-icon">🎓</div> MentorHub</div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-section-title">Student</div>
+        <a href="student-dashboard.html" class="sidebar-link"><span class="icon">🏠</span> Dashboard</a>
+        <a href="find-mentors.html" class="sidebar-link"><span class="icon">🔍</span> Find Mentors</a>
+        <a href="sessions.html" class="sidebar-link"><span class="icon">📅</span> Sessions</a>
+        <a href="messages.html" class="sidebar-link"><span class="icon">💬</span> Messages</a>
+        <a href="progress.html" class="sidebar-link active"><span class="icon">📈</span> Progress</a>
+        <a href="resources.html" class="sidebar-link"><span class="icon">📚</span> Resources</a>
+      </nav>
+      <div class="sidebar-footer"><a href="#" class="sidebar-link" onclick="logout()"><span class="icon">🚪</span> Logout</a></div>
+    </aside>
+    <div class="main-content">
+      <div class="topbar">
+        <div class="topbar-title">Progress & Goals</div>
+        <div class="topbar-actions">
+          <button class="btn btn-primary btn-sm" onclick="openModal()">+ Add Goal</button>
+          <div id="userBadge"></div>
+        </div>
+      </div>
+      <div class="page-content">
+        <!-- Summary Stats -->
+        <div class="goals-summary" id="summaryCards">
+          <div class="stat-card"><div class="stat-icon">🎯</div><div class="stat-info"><div class="stat-value" id="totalGoals">-</div><div class="stat-label">Total Goals</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(16,185,129,0.12);">✅</div><div class="stat-info"><div class="stat-value" id="completedGoals">-</div><div class="stat-label">Completed</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(245,158,11,0.12);">⚡</div><div class="stat-info"><div class="stat-value" id="activeGoals">-</div><div class="stat-label">In Progress</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(6,182,212,0.12);">📊</div><div class="stat-info"><div class="stat-value" id="avgProgress">-</div><div class="stat-label">Avg Progress</div></div></div>
+        </div>
+        <!-- Goals Grid -->
+        <div class="section-header"><h2>My Goals</h2></div>
+        <div id="goalsGrid" class="grid-3"><div class="loading-overlay" style="grid-column:1/-1"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Goal Modal -->
+  <div class="modal-overlay" id="goalModal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="modalTitle">New Goal</span>
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <form id="goalForm">
+        <input type="hidden" id="editGoalId" />
+        <div class="form-group"><label class="form-label">Goal Title</label><input id="goalTitle" class="form-control" placeholder="e.g., Master Python for Data Science" required /></div>
+        <div class="form-group"><label class="form-label">Description</label><textarea id="goalDesc" class="form-control" rows="3" placeholder="Describe what you want to achieve..."></textarea></div>
+        <div class="grid-2">
+          <div class="form-group"><label class="form-label">Target Date</label><input type="date" id="goalDate" class="form-control" /></div>
+          <div class="form-group">
+            <label class="form-label">Priority</label>
+            <select id="goalPriority" class="form-control"><option value="high">🔴 High</option><option value="medium" selected>🟡 Medium</option><option value="low">🟢 Low</option></select>
+          </div>
+        </div>
+        <div class="form-group" id="progressGroup" style="display:none;">
+          <label class="form-label">Progress: <span id="progressLabel">0</span>%</label>
+          <input type="range" id="goalProgress" class="slider" min="0" max="100" value="0" oninput="document.getElementById('progressLabel').textContent=this.value" />
+        </div>
+        <div class="form-group" id="statusGroup" style="display:none;">
+          <label class="form-label">Status</label>
+          <div class="status-select">
+            <div class="status-btn selected" data-status="not_started">Not Started</div>
+            <div class="status-btn" data-status="in_progress">In Progress</div>
+            <div class="status-btn" data-status="completed">Completed</div>
+            <div class="status-btn" data-status="paused">Paused</div>
+          </div>
+          <input type="hidden" id="goalStatus" value="not_started" />
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px;" id="goalSubmitBtn">Add Goal</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    const user = requireAuth(['student']);
+    if (user) {
+      document.getElementById('userBadge').innerHTML=`${renderAvatar(user.name,'sm')} <span style="font-weight:600;font-size:0.9rem">${user.name}</span>`;
+      loadGoals();
+    }
+    async function loadGoals() {
+      try {
+        const [goalsData, summaryData] = await Promise.all([api.getGoals(), api.getProgressSummary()]);
+        const summary = summaryData.summary;
+        document.getElementById('totalGoals').textContent = summary.total_goals||0;
+        document.getElementById('completedGoals').textContent = summary.completed_goals||0;
+        document.getElementById('activeGoals').textContent = summary.active_goals||0;
+        document.getElementById('avgProgress').textContent = Math.round(summary.avg_progress||0)+'%';
+        renderGoals(goalsData.goals);
+      } catch(err){ console.error(err); }
+    }
+    function renderGoals(goals) {
+      const grid = document.getElementById('goalsGrid');
+      if (goals.length===0) { grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🎯</div><p>No goals yet. Add your first goal!</p></div>`; return; }
+      const statusColors = {not_started:'badge-info',in_progress:'badge-warning',completed:'badge-success',paused:'badge-danger'};
+      const statusLabels = {not_started:'Not Started',in_progress:'In Progress',completed:'Completed',paused:'Paused'};
+      grid.innerHTML = goals.map(g=>`
+        <div class="goal-card">
+          <div class="goal-card-header">
+            <div>
+              <span class="priority-dot priority-${g.priority}"></span>
+              <span class="goal-title">${g.title}</span>
+            </div>
+            <span class="badge ${statusColors[g.status]||'badge-primary'}" style="white-space:nowrap">${statusLabels[g.status]||g.status}</span>
+          </div>
+          ${g.description?`<p class="goal-desc">${g.description}</p>`:''}
+          <div style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:0.8rem;color:var(--accent-primary);font-weight:700;">${g.progress_percentage}% complete</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${g.progress_percentage}%"></div></div>
+          <div class="goal-footer">
+            <span class="goal-date">${g.target_date?'📅 '+new Date(g.target_date).toLocaleDateString():''}</span>
+            <div class="goal-actions">
+              <button class="edit-btn" title="Edit" onclick='editGoal(${JSON.stringify(g)})'>✏️</button>
+              <button class="edit-btn" title="Delete" onclick="deleteGoal(${g.id})" style="color:var(--accent-danger)">🗑</button>
+              ${g.status!=='completed'?`<button class="btn btn-success btn-sm" onclick="markComplete(${g.id})">✓</button>`:''}
+            </div>
+          </div>
+        </div>`).join('');
+    }
+    let selectedStatus = 'not_started';
+    document.querySelectorAll('.status-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        document.querySelectorAll('.status-btn').forEach(b=>b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedStatus = btn.dataset.status;
+        document.getElementById('goalStatus').value = selectedStatus;
+      });
+    });
+    function openModal(editing=false) {
+      document.getElementById('modalTitle').textContent = editing ? 'Edit Goal' : 'New Goal';
+      document.getElementById('goalSubmitBtn').textContent = editing ? 'Update Goal' : 'Add Goal';
+      document.getElementById('progressGroup').style.display = editing ? 'block' : 'none';
+      document.getElementById('statusGroup').style.display = editing ? 'block' : 'none';
+      document.getElementById('goalModal').classList.add('open');
+    }
+    function closeModal() { document.getElementById('goalModal').classList.remove('open'); document.getElementById('goalForm').reset(); document.getElementById('editGoalId').value=''; selectedStatus='not_started'; }
+    function editGoal(g) {
+      document.getElementById('editGoalId').value = g.id;
+      document.getElementById('goalTitle').value = g.title;
+      document.getElementById('goalDesc').value = g.description||'';
+      document.getElementById('goalDate').value = g.target_date ? g.target_date.split('T')[0] : '';
+      document.getElementById('goalPriority').value = g.priority;
+      document.getElementById('goalProgress').value = g.progress_percentage;
+      document.getElementById('progressLabel').textContent = g.progress_percentage;
+      selectedStatus = g.status;
+      document.getElementById('goalStatus').value = g.status;
+      document.querySelectorAll('.status-btn').forEach(b=>{ b.classList.toggle('selected',b.dataset.status===g.status); });
+      openModal(true);
+    }
+    async function deleteGoal(id) {
+      if (!confirm('Delete this goal?')) return;
+      try { await api.deleteGoal(id); showToast('Goal deleted','success'); loadGoals(); }
+      catch(e){ showToast(e.message,'error'); }
+    }
+    async function markComplete(id) {
+      try { await api.updateGoal(id,{status:'completed',progress_percentage:100}); showToast('Goal completed! 🎉','success'); loadGoals(); }
+      catch(e){ showToast(e.message,'error'); }
+    }
+    document.getElementById('goalForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const id = document.getElementById('editGoalId').value;
+      const body = {
+        title: document.getElementById('goalTitle').value,
+        description: document.getElementById('goalDesc').value,
+        target_date: document.getElementById('goalDate').value||null,
+        priority: document.getElementById('goalPriority').value,
+        status: id ? selectedStatus : 'not_started',
+        progress_percentage: id ? +document.getElementById('goalProgress').value : 0
+      };
+      try {
+        if (id) { await api.updateGoal(id, body); showToast('Goal updated','success'); }
+        else { await api.createGoal(body); showToast('Goal added! 🎯','success'); }
+        closeModal(); loadGoals();
+      } catch(err){ showToast(err.message,'error'); }
+    });
+  </script>
+</body>
+</html>

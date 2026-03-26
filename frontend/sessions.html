@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sessions — MentorHub</title>
+  <link rel="stylesheet" href="css/global.css" />
+  <style>
+    .session-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-xl); padding:24px; margin-bottom:16px; transition:var(--transition); }
+    .session-card:hover { border-color:var(--border-hover); }
+    .session-card-header { display:flex; align-items:center; gap:16px; margin-bottom:14px; }
+    .session-meta { flex:1; }
+    .session-meta h3 { font-family:var(--font-display); font-size:1.05rem; font-weight:700; margin-bottom:4px; }
+    .session-meta .partner { font-size:0.85rem; color:var(--text-secondary); }
+    .session-details { display:flex; gap:20px; flex-wrap:wrap; margin:12px 0; }
+    .session-detail { display:flex; align-items:center; gap:6px; font-size:0.82rem; color:var(--text-secondary); }
+    .session-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+    .tab-bar { display:flex; gap:4px; margin-bottom:24px; background:var(--bg-card); padding:4px; border-radius:var(--radius-full); width:fit-content; }
+    .tab { padding:8px 20px; border-radius:var(--radius-full); font-size:0.88rem; font-weight:600; cursor:pointer; transition:var(--transition); color:var(--text-muted); }
+    .tab.active { background:var(--gradient-primary); color:#fff; }
+    .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:var(--transition); }
+    .modal-overlay.open { opacity:1;pointer-events:all; }
+    .modal { background:var(--bg-card);border:1px solid var(--border-hover);border-radius:var(--radius-xl);padding:36px;width:90%;max-width:480px;transform:translateY(20px) scale(0.97);transition:var(--transition); }
+    .modal-overlay.open .modal { transform:translateY(0) scale(1); }
+    .modal-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:24px; }
+    .modal-title { font-family:var(--font-display);font-size:1.2rem;font-weight:700; }
+    .modal-close { width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.06);display:grid;place-items:center;cursor:pointer; }
+    .star-input { display:flex; gap:6px; margin:10px 0 20px; }
+    .star-input span { font-size:1.8rem; cursor:pointer; transition:var(--transition); color:var(--text-muted); }
+    .star-input span.lit { color:var(--accent-tertiary); }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand"><div class="brand-icon">🎓</div> MentorHub</div>
+      <nav class="sidebar-nav" id="sidebarNav"></nav>
+      <div class="sidebar-footer"><a href="#" class="sidebar-link" onclick="logout()"><span class="icon">🚪</span> Logout</a></div>
+    </aside>
+    <div class="main-content">
+      <div class="topbar"><div class="topbar-title">Sessions</div><div class="topbar-actions"><div id="userBadge"></div></div></div>
+      <div class="page-content">
+        <div class="tab-bar">
+          <div class="tab active" onclick="filterSessions('all',this)">All</div>
+          <div class="tab" onclick="filterSessions('scheduled',this)">Upcoming</div>
+          <div class="tab" onclick="filterSessions('completed',this)">Completed</div>
+          <div class="tab" onclick="filterSessions('cancelled',this)">Cancelled</div>
+        </div>
+        <div id="sessionsList"><div class="loading-overlay"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feedback Modal -->
+  <div class="modal-overlay" id="feedbackModal">
+    <div class="modal">
+      <div class="modal-header"><span class="modal-title">Rate This Session</span><span class="modal-close" onclick="closeFeedback()">✕</span></div>
+      <p style="color:var(--text-secondary);margin-bottom:16px;">How was your experience? Your rating helps other students find great mentors.</p>
+      <label class="form-label">Rating</label>
+      <div class="star-input" id="starInput">
+        <span onclick="setRating(1)">★</span><span onclick="setRating(2)">★</span><span onclick="setRating(3)">★</span><span onclick="setRating(4)">★</span><span onclick="setRating(5)">★</span>
+      </div>
+      <div class="form-group"><label class="form-label">Comment (optional)</label><textarea id="feedbackComment" class="form-control" rows="3" placeholder="Share your experience..."></textarea></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="submitFeedback()">Submit Feedback</button>
+      <input type="hidden" id="feedbackSessionId" />
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    const user = requireAuth(['student','mentor','admin']);
+    let allSessions = [], currentRating = 0;
+    if (user) {
+      document.getElementById('userBadge').innerHTML=`${renderAvatar(user.name,'sm')} <span style="font-weight:600;font-size:0.9rem">${user.name}</span>`;
+      const navLinks = user.role==='mentor'
+        ? `<a href="mentor-dashboard.html" class="sidebar-link"><span class="icon">🏠</span> Dashboard</a><a href="sessions.html" class="sidebar-link active"><span class="icon">📅</span> Sessions</a><a href="messages.html" class="sidebar-link"><span class="icon">💬</span> Messages</a><a href="resources.html" class="sidebar-link"><span class="icon">📚</span> Resources</a>`
+        : `<a href="student-dashboard.html" class="sidebar-link"><span class="icon">🏠</span> Dashboard</a><a href="find-mentors.html" class="sidebar-link"><span class="icon">🔍</span> Find Mentors</a><a href="sessions.html" class="sidebar-link active"><span class="icon">📅</span> Sessions</a><a href="messages.html" class="sidebar-link"><span class="icon">💬</span> Messages</a><a href="progress.html" class="sidebar-link"><span class="icon">📈</span> Progress</a><a href="resources.html" class="sidebar-link"><span class="icon">📚</span> Resources</a>`;
+      document.getElementById('sidebarNav').innerHTML = `<div class="sidebar-section-title">${user.role.charAt(0).toUpperCase()+user.role.slice(1)}</div>${navLinks}`;
+      loadSessions();
+    }
+    async function loadSessions() {
+      try {
+        const data = await api.getSessions();
+        allSessions = data.sessions;
+        renderSessions(allSessions);
+      } catch(err){ console.error(err); document.getElementById('sessionsList').innerHTML=`<div class="empty-state"><p>Error loading sessions</p></div>`; }
+    }
+    function filterSessions(status, tab) {
+      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      const filtered = status==='all' ? allSessions : allSessions.filter(s=>s.status===status);
+      renderSessions(filtered);
+    }
+    function renderSessions(sessions) {
+      const el = document.getElementById('sessionsList');
+      if (sessions.length===0) { el.innerHTML=`<div class="empty-state"><div class="empty-icon">📅</div><p>No sessions found</p></div>`; return; }
+      el.innerHTML = sessions.map(s=>{
+        const isUpcoming = s.status==='scheduled';
+        const isMentor = user.role==='mentor';
+        const partner = isMentor ? s.student_name : s.mentor_name;
+        const statusColors = {scheduled:'badge-primary',completed:'badge-success',cancelled:'badge-danger',no_show:'badge-warning'};
+        return `<div class="session-card">
+          <div class="session-card-header">
+            <div class="avatar avatar-md" style="background:var(--gradient-primary);display:grid;place-items:center;color:#fff;font-weight:700;">${(partner||'?').charAt(0)}</div>
+            <div class="session-meta"><h3>${s.title}</h3><div class="partner">with ${partner}</div></div>
+            <span class="badge ${statusColors[s.status]||'badge-primary'}">${s.status}</span>
+          </div>
+          <div class="session-details">
+            <span class="session-detail">📅 ${new Date(s.scheduled_at).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</span>
+            <span class="session-detail">🕐 ${new Date(s.scheduled_at).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}</span>
+            <span class="session-detail">⏱ ${s.duration_minutes} min</span>
+          </div>
+          ${s.description?`<p style="font-size:0.83rem;color:var(--text-secondary);margin:8px 0;">${s.description}</p>`:''}
+          <div class="session-actions">
+            ${isUpcoming && s.meeting_link?`<a href="${s.meeting_link}" target="_blank" class="btn btn-primary btn-sm">🔗 Join Meeting</a>`:''}
+            ${isUpcoming?`<button class="btn btn-danger btn-sm" onclick="updateSession(${s.id},'cancelled')">Cancel</button>`:''}
+            ${s.status==='scheduled' && isMentor?`<button class="btn btn-success btn-sm" onclick="updateSession(${s.id},'completed')">✓ Mark Completed</button>`:''}
+            ${s.status==='completed' && !isMentor?`<button class="btn btn-ghost btn-sm" onclick="openFeedback(${s.id})">⭐ Rate Session</button>`:''}
+          </div>
+        </div>`;
+      }).join('');
+    }
+    async function updateSession(id, status) {
+      if (!confirm(`Mark session as ${status}?`)) return;
+      try { await api.updateSession(id,{status}); showToast('Session updated','success'); loadSessions(); }
+      catch(e){ showToast(e.message,'error'); }
+    }
+    function openFeedback(id) {
+      document.getElementById('feedbackSessionId').value = id;
+      currentRating = 0; setRating(0);
+      document.getElementById('feedbackComment').value = '';
+      document.getElementById('feedbackModal').classList.add('open');
+    }
+    function closeFeedback() { document.getElementById('feedbackModal').classList.remove('open'); }
+    function setRating(n) {
+      currentRating = n;
+      document.querySelectorAll('#starInput span').forEach((s,i)=>{ s.classList.toggle('lit',i<n); });
+    }
+    async function submitFeedback() {
+      if (currentRating===0) { showToast('Please select a rating','error'); return; }
+      try {
+        await api.submitFeedback(document.getElementById('feedbackSessionId').value,{rating:currentRating,comment:document.getElementById('feedbackComment').value});
+        showToast('Feedback submitted! Thank you ⭐','success');
+        closeFeedback();
+      } catch(e){ showToast(e.message,'error'); }
+    }
+  </script>
+</body>
+</html>

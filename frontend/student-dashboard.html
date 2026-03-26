@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Dashboard — MentorHub</title>
+  <link rel="stylesheet" href="css/global.css" />
+  <style>
+    .welcome-banner {
+      background: var(--gradient-primary);
+      border-radius: var(--radius-xl);
+      padding: 32px;
+      margin-bottom: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .welcome-banner::before {
+      content: '';
+      position: absolute;
+      right: -40px;
+      top: -40px;
+      width: 200px;
+      height: 200px;
+      background: rgba(255, 255, 255, 0.07);
+      border-radius: 50%;
+    }
+
+    .welcome-banner::after {
+      content: '🎓';
+      position: absolute;
+      right: 40px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 4rem;
+      opacity: 0.3;
+    }
+
+    .welcome-banner h2 {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      color: white;
+      margin-bottom: 6px;
+    }
+
+    .welcome-banner p {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .mentor-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      transition: var(--transition);
+      margin-bottom: 10px;
+    }
+
+    .mentor-card:hover {
+      background: rgba(255, 255, 255, 0.03);
+      border-color: var(--border-hover);
+    }
+
+    .mentor-card-info h4 {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .mentor-card-info p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .session-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+      transition: var(--transition);
+    }
+
+    .session-item:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .session-time {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .session-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .goal-bar {
+      margin-bottom: 14px;
+    }
+
+    .goal-bar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .goal-bar-name {
+      font-size: 0.88rem;
+      font-weight: 500;
+    }
+
+    .goal-bar-pct {
+      font-size: 0.8rem;
+      color: var(--accent-primary);
+      font-weight: 600;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">🎓</div> MentorHub
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-section-title">Student</div>
+        <a href="student-dashboard.html" class="sidebar-link active"><span class="icon">🏠</span> Dashboard</a>
+        <a href="find-mentors.html" class="sidebar-link"><span class="icon">🔍</span> Find Mentors</a>
+        <a href="sessions.html" class="sidebar-link"><span class="icon">📅</span> Sessions</a>
+        <a href="messages.html" class="sidebar-link"><span class="icon">💬</span> Messages <span id="unreadBadge"
+            class="badge badge-danger" style="margin-left:auto;display:none;"></span></a>
+        <a href="progress.html" class="sidebar-link"><span class="icon">📈</span> Progress</a>
+        <a href="resources.html" class="sidebar-link"><span class="icon">📚</span> Resources</a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="#" class="sidebar-link" onclick="logout()"><span class="icon">🚪</span> Logout</a>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main-content">
+      <div class="topbar">
+        <div class="topbar-title">Dashboard</div>
+        <div class="topbar-actions">
+          <div id="userBadge" style="display:flex;align-items:center;gap:10px;"></div>
+        </div>
+      </div>
+      <div class="page-content">
+        <!-- Welcome Banner -->
+        <div class="welcome-banner">
+          <h2 id="welcomeMsg">Welcome back! 👋</h2>
+          <p>You have <span id="upcomingSessions">0</span> upcoming sessions. Keep up the great work!</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid-4" style="margin-bottom:28px;">
+          <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-info">
+              <div class="stat-value" id="statMentors">-</div>
+              <div class="stat-label">Active Mentors</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📅</div>
+            <div class="stat-info">
+              <div class="stat-value" id="statSessions">-</div>
+              <div class="stat-label">Total Sessions</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🎯</div>
+            <div class="stat-info">
+              <div class="stat-value" id="statGoals">-</div>
+              <div class="stat-label">Goals Set</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📬</div>
+            <div class="stat-info">
+              <div class="stat-value" id="statMessages">-</div>
+              <div class="stat-label">Messages</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-bottom:28px;align-items:start;">
+          <!-- Upcoming Sessions -->
+          <div class="card">
+            <div class="section-header">
+              <h2>Upcoming Sessions</h2>
+              <a href="sessions.html" class="btn btn-ghost btn-sm">View All →</a>
+            </div>
+            <div id="sessionsList">
+              <div class="loading-overlay">
+                <div class="spinner"></div>
+              </div>
+            </div>
+          </div>
+          <!-- My Mentors -->
+          <div class="card">
+            <div class="section-header">
+              <h2>My Mentors</h2>
+              <a href="find-mentors.html" class="btn btn-primary btn-sm">+ Find More</a>
+            </div>
+            <div id="mentorsList">
+              <div class="loading-overlay">
+                <div class="spinner"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Goals -->
+        <div class="card">
+          <div class="section-header">
+            <h2>Goal Progress</h2>
+            <a href="progress.html" class="btn btn-ghost btn-sm">Manage Goals →</a>
+          </div>
+          <div id="goalsList">
+            <div class="loading-overlay">
+              <div class="spinner"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    const user = requireAuth(['student']);
+    if (user) {
+      document.getElementById('welcomeMsg').textContent = `Welcome back, ${user.name}! 👋`;
+      document.getElementById('userBadge').innerHTML = `${renderAvatar(user.name, 'sm')} <span style="font-weight:600;font-size:0.9rem">${user.name}</span>`;
+      loadDashboard();
+    }
+    async function loadDashboard() {
+      try {
+        const [sessRes, reqRes, goalRes, msgRes] = await Promise.allSettled([
+          api.getSessions(), api.getRequests(), api.getGoals(), api.getConversations()
+        ]);
+        // Sessions
+        const sessions = sessRes.status === 'fulfilled' ? sessRes.value.sessions : [];
+        const upcoming = sessions.filter(s => s.status === 'scheduled');
+        document.getElementById('statSessions').textContent = sessions.length;
+        document.getElementById('upcomingSessions').textContent = upcoming.length;
+        const sessionsList = document.getElementById('sessionsList');
+        if (upcoming.length === 0) {
+          sessionsList.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><p>No upcoming sessions</p></div>`;
+        } else {
+          sessionsList.innerHTML = upcoming.slice(0, 4).map(s => `
+            <div class="session-item">
+              <div style="font-size:1.5rem;">📅</div>
+              <div style="flex:1">
+                <div class="session-title">${s.title}</div>
+                <div class="session-time">with ${s.mentor_name} · ${new Date(s.scheduled_at).toLocaleString()}</div>
+              </div>
+              <span class="badge badge-primary">Upcoming</span>
+            </div>`).join('');
+        }
+        // Requests / Mentors
+        const requests = reqRes.status === 'fulfilled' ? reqRes.value.requests : [];
+        const accepted = requests.filter(r => r.status === 'accepted');
+        document.getElementById('statMentors').textContent = accepted.length;
+        const mentorsList = document.getElementById('mentorsList');
+        if (accepted.length === 0) {
+          mentorsList.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><p>No active mentors yet. <a href="find-mentors.html" style="color:var(--accent-primary)">Find one!</a></p></div>`;
+        } else {
+          mentorsList.innerHTML = accepted.slice(0, 4).map(r => `
+            <div class="mentor-card">
+              ${renderAvatar(r.mentor_name, 'sm')}
+              <div class="mentor-card-info"><h4>${r.mentor_name}</h4><p>${r.mentor_title || ''} ${r.mentor_company ? '· ' + r.mentor_company : ''}</p></div>
+              <a href="messages.html" class="btn btn-ghost btn-sm" style="margin-left:auto;">Chat</a>
+            </div>`).join('');
+        }
+        // Goals
+        const goals = goalRes.status === 'fulfilled' ? goalRes.value.goals : [];
+        document.getElementById('statGoals').textContent = goals.length;
+        const goalsList = document.getElementById('goalsList');
+        if (goals.length === 0) {
+          goalsList.innerHTML = `<div class="empty-state"><div class="empty-icon">🎯</div><p>No goals set. <a href="progress.html" style="color:var(--accent-primary)">Add your first goal!</a></p></div>`;
+        } else {
+          goalsList.innerHTML = goals.slice(0, 5).map(g => `
+            <div class="goal-bar">
+              <div class="goal-bar-header">
+                <span class="goal-bar-name">${g.title}</span>
+                <span class="goal-bar-pct">${g.progress_percentage}%</span>
+              </div>
+              <div class="progress-bar"><div class="progress-fill" style="width:${g.progress_percentage}%"></div></div>
+            </div>`).join('');
+        }
+        // Messages
+        const convs = msgRes.status === 'fulfilled' ? msgRes.value.conversations : [];
+        const unread = convs.reduce((acc, c) => acc + (c.unread_count || 0), 0);
+        document.getElementById('statMessages').textContent = convs.length;
+        if (unread > 0) { const b = document.getElementById('unreadBadge'); b.textContent = unread; b.style.display = 'inline-flex'; }
+      } catch (err) { console.error(err); }
+    }
+  </script>
+</body>
+
+</html>

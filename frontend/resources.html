@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resources — MentorHub</title>
+  <link rel="stylesheet" href="css/global.css" />
+  <style>
+    .resource-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:20px; }
+    .resource-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-xl); padding:24px; transition:var(--transition); display:flex; flex-direction:column; }
+    .resource-card:hover { border-color:var(--border-hover); transform:translateY(-3px); box-shadow:var(--shadow-glow); }
+    .resource-type-icon { font-size:2rem; margin-bottom:14px; }
+    .resource-title { font-family:var(--font-display); font-size:1rem; font-weight:700; margin-bottom:8px; }
+    .resource-desc { font-size:0.82rem; color:var(--text-secondary); line-height:1.5; flex:1; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+    .resource-footer { display:flex; align-items:center; justify-content:space-between; margin-top:16px; }
+    .resource-meta { font-size:0.75rem; color:var(--text-muted); }
+    .resource-views { font-size:0.75rem; color:var(--text-muted); }
+    .filter-bar { display:flex; gap:12px; margin-bottom:28px; flex-wrap:wrap; align-items:center; }
+    .type-badge { padding:4px 12px; border-radius:var(--radius-full); font-size:0.75rem; font-weight:600; }
+    .type-article { background:rgba(108,99,255,0.12); color:var(--accent-primary); }
+    .type-video { background:rgba(239,68,68,0.12); color:var(--accent-danger); }
+    .type-pdf { background:rgba(245,158,11,0.12); color:var(--accent-tertiary); }
+    .type-link { background:rgba(6,182,212,0.12); color:var(--accent-info); }
+    .type-guide { background:rgba(16,185,129,0.12); color:var(--accent-success); }
+    /* Modal */
+    .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:var(--transition); }
+    .modal-overlay.open { opacity:1;pointer-events:all; }
+    .modal { background:var(--bg-card);border:1px solid var(--border-hover);border-radius:var(--radius-xl);padding:36px;width:90%;max-width:500px;max-height:90vh;overflow-y:auto;transform:translateY(20px) scale(0.97);transition:var(--transition); }
+    .modal-overlay.open .modal { transform:translateY(0) scale(1); }
+    .modal-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:24px; }
+    .modal-title { font-family:var(--font-display);font-size:1.3rem;font-weight:700; }
+    .modal-close { width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.06);display:grid;place-items:center;cursor:pointer; }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand"><div class="brand-icon">🎓</div> MentorHub</div>
+      <nav class="sidebar-nav" id="sidebarNav"></nav>
+      <div class="sidebar-footer"><a href="#" class="sidebar-link" onclick="logout()"><span class="icon">🚪</span> Logout</a></div>
+    </aside>
+    <div class="main-content">
+      <div class="topbar">
+        <div class="topbar-title">Learning Resources</div>
+        <div class="topbar-actions">
+          <button class="btn btn-primary btn-sm" id="addResourceBtn" style="display:none" onclick="openModal()">+ Add Resource</button>
+          <div id="userBadge"></div>
+        </div>
+      </div>
+      <div class="page-content">
+        <div class="filter-bar">
+          <input class="form-control" style="flex:1;min-width:200px;" id="searchInput" placeholder="🔍 Search resources..." />
+          <select class="form-control" id="categoryFilter" style="max-width:200px;"><option value="">All Categories</option></select>
+          <select class="form-control" id="typeFilter" style="max-width:160px;">
+            <option value="">All Types</option>
+            <option value="article">📰 Article</option>
+            <option value="video">🎥 Video</option>
+            <option value="pdf">📄 PDF</option>
+            <option value="link">🔗 Link</option>
+            <option value="guide">📖 Guide</option>
+          </select>
+          <span id="resultCount" class="badge badge-primary"></span>
+        </div>
+        <div class="resource-grid" id="resourceGrid"><div class="loading-overlay" style="grid-column:1/-1"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Resource Modal -->
+  <div class="modal-overlay" id="resourceModal">
+    <div class="modal">
+      <div class="modal-header"><span class="modal-title">Add Resource</span><span class="modal-close" onclick="closeModal()">✕</span></div>
+      <form id="resourceForm">
+        <div class="form-group"><label class="form-label">Title</label><input id="resTitle" class="form-control" placeholder="Resource title" required /></div>
+        <div class="form-group"><label class="form-label">URL</label><input id="resUrl" class="form-control" type="url" placeholder="https://..." required /></div>
+        <div class="form-group"><label class="form-label">Description</label><textarea id="resDesc" class="form-control" rows="3" placeholder="Brief description..."></textarea></div>
+        <div class="grid-2">
+          <div class="form-group"><label class="form-label">Type</label><select id="resType" class="form-control"><option value="link">🔗 Link</option><option value="article">📰 Article</option><option value="video">🎥 Video</option><option value="pdf">📄 PDF</option><option value="guide">📖 Guide</option></select></div>
+          <div class="form-group"><label class="form-label">Category</label><select id="resCategory" class="form-control"><option value="">- None -</option></select></div>
+        </div>
+        <div class="form-group"><label class="form-label">Tags (comma-separated)</label><input id="resTags" class="form-control" placeholder="python, ai, career" /></div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">Add Resource</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    const user = requireAuth(['student','mentor','admin']);
+    let allResources = [];
+    const typeIcons = {article:'📰',video:'🎥',pdf:'📄',link:'🔗',guide:'📖'};
+    if (user) {
+      document.getElementById('userBadge').innerHTML=`${renderAvatar(user.name,'sm')} <span style="font-weight:600;font-size:0.9rem">${user.name}</span>`;
+      if (user.role!=='student') document.getElementById('addResourceBtn').style.display='inline-flex';
+      const nav = user.role==='mentor'
+        ? `<a href="mentor-dashboard.html" class="sidebar-link"><span class="icon">🏠</span> Dashboard</a><a href="sessions.html" class="sidebar-link"><span class="icon">📅</span> Sessions</a><a href="messages.html" class="sidebar-link"><span class="icon">💬</span> Messages</a><a href="resources.html" class="sidebar-link active"><span class="icon">📚</span> Resources</a>`
+        : user.role==='admin'
+        ? `<a href="admin-dashboard.html" class="sidebar-link"><span class="icon">🏠</span> Admin Dashboard</a><a href="resources.html" class="sidebar-link active"><span class="icon">📚</span> Resources</a>`
+        : `<a href="student-dashboard.html" class="sidebar-link"><span class="icon">🏠</span> Dashboard</a><a href="find-mentors.html" class="sidebar-link"><span class="icon">🔍</span> Find Mentors</a><a href="sessions.html" class="sidebar-link"><span class="icon">📅</span> Sessions</a><a href="messages.html" class="sidebar-link"><span class="icon">💬</span> Messages</a><a href="progress.html" class="sidebar-link"><span class="icon">📈</span> Progress</a><a href="resources.html" class="sidebar-link active"><span class="icon">📚</span> Resources</a>`;
+      document.getElementById('sidebarNav').innerHTML=`<div class="sidebar-section-title">${user.role.charAt(0).toUpperCase()+user.role.slice(1)}</div>${nav}`;
+      init();
+    }
+    async function init() {
+      try {
+        const [catData, resData] = await Promise.all([api.getCategories(), api.getResources()]);
+        allResources = resData.resources;
+        const catSel = document.getElementById('categoryFilter');
+        const resCatSel = document.getElementById('resCategory');
+        catData.categories.forEach(c=>{
+          [catSel, resCatSel].forEach(s=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.icon+' '+c.name; s.appendChild(o); });
+        });
+        renderResources(allResources);
+      } catch(err){ console.error(err); }
+    }
+    function renderResources(resources) {
+      const grid = document.getElementById('resourceGrid');
+      document.getElementById('resultCount').textContent = resources.length + ' resources';
+      if (resources.length===0) { grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">📚</div><p>No resources found</p></div>`; return; }
+      grid.innerHTML = resources.map(r=>`
+        <div class="resource-card">
+          <div class="resource-type-icon">${typeIcons[r.resource_type]||'📄'}</div>
+          <div class="resource-title">${r.title}</div>
+          <p class="resource-desc">${r.description||'No description provided.'}</p>
+          <div class="resource-footer">
+            <div>
+              <span class="type-badge type-${r.resource_type}">${r.resource_type}</span>
+              ${r.category_name?`<span style="font-size:0.75rem;color:var(--text-muted);margin-left:6px;">${r.category_icon||''} ${r.category_name}</span>`:''}
+            </div>
+            <a href="${r.url}" target="_blank" onclick="trackView(${r.id})" class="btn btn-primary btn-sm">Open →</a>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:10px;align-items:center;">
+            <span class="resource-meta">by ${r.uploader_name}</span>
+            <span class="resource-views">👁 ${r.views||0} views</span>
+          </div>
+          ${r.tags?`<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:4px;">${r.tags.split(',').map(t=>`<span class="badge badge-info" style="font-size:0.7rem">${t.trim()}</span>`).join('')}</div>`:''}
+        </div>`).join('');
+    }
+    function filterResources() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const category = document.getElementById('categoryFilter').value;
+      const type = document.getElementById('typeFilter').value;
+      renderResources(allResources.filter(r=>{
+        const ms = !search || r.title.toLowerCase().includes(search) || (r.description||'').toLowerCase().includes(search);
+        const mc = !category || r.category_id==category;
+        const mt = !type || r.resource_type===type;
+        return ms && mc && mt;
+      }));
+    }
+    document.getElementById('searchInput').addEventListener('input', filterResources);
+    document.getElementById('categoryFilter').addEventListener('change', filterResources);
+    document.getElementById('typeFilter').addEventListener('change', filterResources);
+    async function trackView(id) { try { await fetch(`/api/resources/${id}/view`,{method:'POST'}); } catch {} }
+    function openModal() { document.getElementById('resourceModal').classList.add('open'); }
+    function closeModal() { document.getElementById('resourceModal').classList.remove('open'); document.getElementById('resourceForm').reset(); }
+    document.getElementById('resourceForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      try {
+        await api.addResource({title:document.getElementById('resTitle').value,url:document.getElementById('resUrl').value,description:document.getElementById('resDesc').value,resource_type:document.getElementById('resType').value,category_id:document.getElementById('resCategory').value||null,tags:document.getElementById('resTags').value});
+        showToast('Resource added!','success');
+        closeModal();
+        const resData = await api.getResources();
+        allResources = resData.resources;
+        renderResources(allResources);
+      } catch(err){ showToast(err.message,'error'); }
+    });
+  </script>
+</body>
+</html>

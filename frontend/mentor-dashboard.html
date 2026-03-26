@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mentor Dashboard — MentorHub</title>
+  <link rel="stylesheet" href="css/global.css" />
+  <style>
+    .request-item { display:flex; align-items:center; gap:14px; padding:16px; border-radius:var(--radius-lg); border:1px solid var(--border); margin-bottom:10px; transition:var(--transition); }
+    .request-item:hover { background:rgba(255,255,255,0.02); }
+    .request-actions { margin-left:auto; display:flex; gap:8px; }
+    .student-info h4 { font-size:0.93rem; font-weight:600; }
+    .student-info p { font-size:0.8rem; color:var(--text-muted); }
+    .welcome-banner { background:linear-gradient(135deg,#00d4aa,#06b6d4); border-radius:var(--radius-xl); padding:32px; margin-bottom:28px; position:relative; overflow:hidden; }
+    .welcome-banner::after { content:'🏆'; position:absolute; right:40px; top:50%; transform:translateY(-50%); font-size:4rem; opacity:0.2; }
+    .welcome-banner h2 { color:#fff; font-family:var(--font-display); font-size:1.5rem; }
+    .welcome-banner p { color:rgba(255,255,255,0.8); }
+    .session-mini { display:flex; gap:12px; align-items:center; padding:12px; border-radius:var(--radius-md); border:1px solid var(--border); margin-bottom:8px; }
+    .session-mini-info .name { font-size:0.9rem; font-weight:600; }
+    .session-mini-info .time { font-size:0.78rem; color:var(--text-muted); }
+    .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:var(--transition); }
+    .modal-overlay.open { opacity:1;pointer-events:all; }
+    .modal { background:var(--bg-card);border:1px solid var(--border-hover);border-radius:var(--radius-xl);padding:36px;width:90%;max-width:520px;max-height:90vh;overflow-y:auto;transform:translateY(20px) scale(0.97);transition:var(--transition); }
+    .modal-overlay.open .modal { transform:translateY(0) scale(1); }
+    .modal-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:24px; }
+    .modal-title { font-family:var(--font-display);font-size:1.3rem;font-weight:700; }
+    .modal-close { width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.06);display:grid;place-items:center;cursor:pointer;color:var(--text-secondary); }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand"><div class="brand-icon">🎓</div> MentorHub</div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-section-title">Mentor</div>
+        <a href="mentor-dashboard.html" class="sidebar-link active"><span class="icon">🏠</span> Dashboard</a>
+        <a href="sessions.html" class="sidebar-link"><span class="icon">📅</span> Sessions</a>
+        <a href="messages.html" class="sidebar-link"><span class="icon">💬</span> Messages</a>
+        <a href="resources.html" class="sidebar-link"><span class="icon">📚</span> Resources</a>
+      </nav>
+      <div class="sidebar-footer"><a href="#" class="sidebar-link" onclick="logout()"><span class="icon">🚪</span> Logout</a></div>
+    </aside>
+    <div class="main-content">
+      <div class="topbar">
+        <div class="topbar-title">Mentor Dashboard</div>
+        <div class="topbar-actions"><div id="userBadge"></div></div>
+      </div>
+      <div class="page-content">
+        <div class="welcome-banner">
+          <h2 id="welcomeMsg">Welcome, Mentor! 🏆</h2>
+          <p>You're making a difference. <span id="pendingCount">0</span> new mentorship requests waiting.</p>
+        </div>
+        <!-- Stats -->
+        <div class="grid-4" style="margin-bottom:28px;">
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(0,212,170,0.12);">🎓</div><div class="stat-info"><div class="stat-value" id="statStudents">-</div><div class="stat-label">Active Students</div></div></div>
+          <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-info"><div class="stat-value" id="statSessions">-</div><div class="stat-label">Total Sessions</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(245,158,11,0.12);">⭐</div><div class="stat-info"><div class="stat-value" id="statRating">-</div><div class="stat-label">Avg Rating</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(239,68,68,0.12);">📬</div><div class="stat-info"><div class="stat-value" id="statPending">-</div><div class="stat-label">Pending Requests</div></div></div>
+        </div>
+        <div class="grid-2" style="align-items:start;">
+          <!-- Pending Requests -->
+          <div class="card">
+            <div class="section-header"><h2>Mentorship Requests</h2><span class="badge badge-warning" id="pendingBadge"></span></div>
+            <div id="requestsList"><div class="loading-overlay"><div class="spinner"></div></div></div>
+          </div>
+          <!-- Upcoming Sessions -->
+          <div class="card">
+            <div class="section-header"><h2>Upcoming Sessions</h2><a href="sessions.html" class="btn btn-ghost btn-sm">View All →</a></div>
+            <div id="sessionsList"><div class="loading-overlay"><div class="spinner"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Schedule Modal -->
+  <div class="modal-overlay" id="scheduleModal">
+    <div class="modal">
+      <div class="modal-header"><span class="modal-title">Schedule a Session</span><span class="modal-close" onclick="closeModal()">✕</span></div>
+      <form id="scheduleForm">
+        <input type="hidden" id="modalRequestId" />
+        <input type="hidden" id="modalStudentId" />
+        <div class="form-group"><label class="form-label">Session Title</label><input id="sessionTitle" class="form-control" placeholder="e.g., Career roadmap discussion" required /></div>
+        <div class="form-group"><label class="form-label">Date & Time</label><input type="datetime-local" id="sessionDate" class="form-control" required /></div>
+        <div class="form-group"><label class="form-label">Duration (minutes)</label><select id="sessionDuration" class="form-control"><option value="30">30 min</option><option value="60" selected>60 min</option><option value="90">90 min</option><option value="120">2 hours</option></select></div>
+        <div class="form-group"><label class="form-label">Meeting Link</label><input id="sessionLink" class="form-control" placeholder="https://meet.google.com/..." /></div>
+        <div class="form-group"><label class="form-label">Description</label><textarea id="sessionDesc" class="form-control" rows="3" placeholder="Agenda for this session..."></textarea></div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">Schedule Session</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    const user = requireAuth(['mentor']);
+    if (user) {
+      document.getElementById('welcomeMsg').textContent = `Welcome, ${user.name}! 🏆`;
+      document.getElementById('userBadge').innerHTML = `${renderAvatar(user.name,'sm')} <span style="font-weight:600;font-size:0.9rem">${user.name}</span>`;
+      loadDashboard();
+    }
+    async function loadDashboard() {
+      try {
+        const [sessRes, reqRes] = await Promise.allSettled([api.getSessions(), api.getRequests()]);
+        const sessions = sessRes.status==='fulfilled' ? sessRes.value.sessions : [];
+        const requests = reqRes.status==='fulfilled' ? reqRes.value.requests : [];
+        const pending = requests.filter(r=>r.status==='pending');
+        const accepted = requests.filter(r=>r.status==='accepted');
+        document.getElementById('statStudents').textContent = accepted.length;
+        document.getElementById('statSessions').textContent = sessions.filter(s=>s.status==='completed').length;
+        document.getElementById('statPending').textContent = pending.length;
+        document.getElementById('pendingCount').textContent = pending.length;
+        document.getElementById('pendingBadge').textContent = pending.length + ' pending';
+        // Rating from profile
+        try { const p = await api.getMyMentorProfile(); if(p.profile) document.getElementById('statRating').textContent = p.profile.average_rating ? parseFloat(p.profile.average_rating).toFixed(1)+'★' : 'N/A'; } catch {}
+        // Requests list
+        const reqList = document.getElementById('requestsList');
+        if (requests.length === 0) {
+          reqList.innerHTML = `<div class="empty-state"><div class="empty-icon">📬</div><p>No requests yet</p></div>`;
+        } else {
+          reqList.innerHTML = requests.slice(0,5).map(r => `
+            <div class="request-item">
+              ${renderAvatar(r.student_name,'sm')}
+              <div class="student-info"><h4>${r.student_name}</h4><p>${r.major||''} ${r.year_of_study||''}</p><p style="margin-top:2px;font-size:0.78rem;">${r.message||''}</p></div>
+              <div class="request-actions">
+                ${r.status==='pending' ? `
+                  <button class="btn btn-success btn-sm" onclick="respondRequest(${r.id},'accepted',${r.student_id})">✓ Accept</button>
+                  <button class="btn btn-danger btn-sm" onclick="respondRequest(${r.id},'rejected',null)">✗</button>
+                ` : `<span class="badge ${r.status==='accepted'?'badge-success':'badge-danger'}">${r.status}</span>`}
+              </div>
+            </div>`).join('');
+        }
+        // Sessions list
+        const upcoming = sessions.filter(s=>s.status==='scheduled').slice(0,5);
+        const sesList = document.getElementById('sessionsList');
+        if (upcoming.length===0) {
+          sesList.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><p>No upcoming sessions</p></div>`;
+        } else {
+          sesList.innerHTML = upcoming.map(s=>`
+            <div class="session-mini">
+              <div style="font-size:1.4rem;">📅</div>
+              <div class="session-mini-info flex:1">
+                <div class="name">${s.title}</div>
+                <div class="time">with ${s.student_name} · ${new Date(s.scheduled_at).toLocaleString()}</div>
+              </div>
+              ${s.meeting_link?`<a href="${s.meeting_link}" target="_blank" class="btn btn-primary btn-sm">Join</a>`:''}
+            </div>`).join('');
+        }
+      } catch(err){ console.error(err); }
+    }
+    async function respondRequest(id, status, studentId) {
+      try {
+        await api.respondToRequest(id, {status});
+        if (status==='accepted' && studentId) {
+          // Open schedule modal
+          document.getElementById('modalRequestId').value = id;
+          document.getElementById('modalStudentId').value = studentId;
+          document.getElementById('scheduleModal').classList.add('open');
+        } else {
+          showToast('Request '+status,'success');
+          loadDashboard();
+        }
+      } catch(e){ showToast(e.message,'error'); }
+    }
+    function closeModal() { document.getElementById('scheduleModal').classList.remove('open'); }
+    document.getElementById('scheduleForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      try {
+        await api.createSession({
+          request_id: +document.getElementById('modalRequestId').value,
+          student_id: +document.getElementById('modalStudentId').value,
+          title: document.getElementById('sessionTitle').value,
+          scheduled_at: document.getElementById('sessionDate').value,
+          duration_minutes: +document.getElementById('sessionDuration').value,
+          meeting_link: document.getElementById('sessionLink').value,
+          description: document.getElementById('sessionDesc').value
+        });
+        showToast('Session scheduled!','success');
+        closeModal();
+        loadDashboard();
+      } catch(e){ showToast(e.message,'error'); }
+    });
+  </script>
+</body>
+</html>

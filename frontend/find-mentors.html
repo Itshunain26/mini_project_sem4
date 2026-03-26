@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Find Mentors — MentorHub</title>
+  <link rel="stylesheet" href="css/global.css" />
+  <style>
+    .filter-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .search-input {
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .mentor-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .mentor-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 28px;
+      transition: var(--transition);
+    }
+
+    .mentor-card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .mentor-card-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .mentor-card-header .avatar {
+      margin: 0 auto 14px;
+    }
+
+    .mentor-card-name {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .mentor-card-title {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin: 4px 0 8px;
+    }
+
+    .mentor-card-rating {
+      font-size: 0.85rem;
+      color: var(--accent-tertiary);
+    }
+
+    .mentor-card-bio {
+      font-size: 0.83rem;
+      color: var(--text-secondary);
+      margin: 12px 0 16px;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .mentor-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+
+    .mentor-card-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .mentor-card-actions .btn {
+      flex: 1;
+      justify-content: center;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: var(--transition);
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border-hover);
+      border-radius: var(--radius-xl);
+      padding: 36px;
+      width: 90%;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: translateY(20px) scale(0.97);
+      transition: var(--transition);
+    }
+
+    .modal-overlay.open .modal {
+      transform: translateY(0) scale(1);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .modal-title {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.06);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+    }
+
+    .available-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-success);
+      display: inline-block;
+      margin-right: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon"></div> MentorHub
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-section-title">Student</div>
+        <a href="student-dashboard.html" class="sidebar-link"><span class="icon">🏠</span> Dashboard</a>
+        <a href="find-mentors.html" class="sidebar-link active"><span class="icon">🔍</span> Find Mentors</a>
+        <a href="sessions.html" class="sidebar-link"><span class="icon">📅</span> Sessions</a>
+        <a href="messages.html" class="sidebar-link"><span class="icon">💬</span> Messages</a>
+        <a href="progress.html" class="sidebar-link"><span class="icon">📈</span> Progress</a>
+        <a href="resources.html" class="sidebar-link"><span class="icon">📚</span> Resources</a>
+      </nav>
+      <div class="sidebar-footer"><a href="#" class="sidebar-link" onclick="logout()"><span class="icon">🚪</span>
+          Logout</a></div>
+    </aside>
+    <div class="main-content">
+      <div class="topbar">
+        <div class="topbar-title">Find Mentors</div>
+        <div class="topbar-actions">
+          <div id="userBadge"></div>
+        </div>
+      </div>
+      <div class="page-content">
+        <div class="filter-bar">
+          <input class="form-control search-input" id="searchInput" placeholder="🔍 Search by name, expertise..." />
+          <select class="form-control" id="categoryFilter" style="max-width:200px;">
+            <option value="">All Categories</option>
+          </select>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.88rem;white-space:nowrap;">
+            <input type="checkbox" id="availableOnly" /> Available Only
+          </label>
+          <span id="resultCount" class="badge badge-primary" style="white-space:nowrap;"></span>
+        </div>
+        <div class="mentor-grid" id="mentorGrid">
+          <div class="loading-overlay" style="grid-column:1/-1;min-height:300px;">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Request Modal -->
+  <div class="modal-overlay" id="requestModal">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Send Mentorship Request</span>
+        <span class="modal-close" onclick="closeModal()">✕</span>
+      </div>
+      <div id="modalMentorInfo"
+        style="display:flex;align-items:center;gap:14px;margin-bottom:24px;padding:16px;background:rgba(255,255,255,0.03);border-radius:var(--radius-md);">
+      </div>
+      <form id="requestForm">
+        <input type="hidden" id="mentorIdInput" />
+        <div class="form-group"><label class="form-label">Your Message to the Mentor</label><textarea
+            id="requestMessage" class="form-control" rows="4"
+            placeholder="Introduce yourself and explain why you'd like this mentor..." required></textarea></div>
+        <div class="form-group"><label class="form-label">Your Goals</label><textarea id="requestGoals"
+            class="form-control" rows="3" placeholder="What do you hope to achieve through this mentorship?"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">Send Request
+          🚀</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    const user = requireAuth(['student', 'admin']);
+    if (user) { document.getElementById('userBadge').innerHTML = `${renderAvatar(user.name, 'sm')} <span style="font-weight:600;font-size:0.9rem">${user.name}</span>`; }
+    let allMentors = [];
+    async function init() {
+      try {
+        const [catData, mentorData] = await Promise.all([api.getCategories(), api.getMentors()]);
+        allMentors = mentorData.mentors;
+        // Populate categories
+        const sel = document.getElementById('categoryFilter');
+        catData.categories.forEach(c => { const opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.icon + ' ' + c.name; sel.appendChild(opt); });
+        renderMentors(allMentors);
+      } catch (err) { console.error(err); }
+    }
+    function renderMentors(mentors) {
+      const grid = document.getElementById('mentorGrid');
+      document.getElementById('resultCount').textContent = mentors.length + ' mentors';
+      if (mentors.length === 0) { grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🔍</div><p>No mentors match your search</p></div>`; return; }
+      grid.innerHTML = mentors.map(m => `
+        <div class="mentor-card">
+          <div class="mentor-card-header">
+            <div class="avatar avatar-lg" style="background:var(--gradient-primary);display:grid;place-items:center;color:#fff;font-size:1.5rem;font-weight:700;margin:0 auto 14px;">${(m.name || '?').charAt(0)}</div>
+            <div class="mentor-card-name">${m.name}</div>
+            <div class="mentor-card-title">${m.title || 'Mentor'} ${m.company ? '· ' + m.company : ''}</div>
+            <div class="mentor-card-rating">${renderStars(Math.round(m.average_rating || 0))} <span style="color:var(--text-muted);font-size:0.78rem;">(${m.total_sessions || 0} sessions)</span></div>
+          </div>
+          <div class="mentor-card-bio">${m.expertise_summary || m.bio || 'Expert mentor ready to guide you.'}</div>
+          <div class="mentor-tags">
+            ${m.is_available ? `<span class="tag"><span class="available-dot"></span>Available</span>` : ''}
+            ${m.categories ? m.categories.split(', ').slice(0, 3).map(c => `<span class="tag">${c}</span>`).join('') : ''}
+          </div>
+          <div class="mentor-card-actions">
+            <button class="btn btn-ghost btn-sm" onclick="openRequestModal(${m.id},'${m.name}','${m.title || ''}','${m.company || ''}')">Send Request</button>
+            <a href="messages.html?user=${m.id}" class="btn btn-primary btn-sm">Message</a>
+          </div>
+        </div>`).join('');
+    }
+    function filterMentors() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const category = document.getElementById('categoryFilter').value;
+      const availableOnly = document.getElementById('availableOnly').checked;
+      let filtered = allMentors.filter(m => {
+        const matchSearch = !search || m.name.toLowerCase().includes(search) || (m.expertise_summary || '').toLowerCase().includes(search) || (m.company || '').toLowerCase().includes(search);
+        const matchCat = !category || (m.category_ids || '').split(',').includes(category);
+        const matchAvail = !availableOnly || m.is_available;
+        return matchSearch && matchCat && matchAvail;
+      });
+      renderMentors(filtered);
+    }
+    document.getElementById('searchInput').addEventListener('input', filterMentors);
+    document.getElementById('categoryFilter').addEventListener('change', filterMentors);
+    document.getElementById('availableOnly').addEventListener('change', filterMentors);
+    function openRequestModal(mentorId, name, title, company) {
+      document.getElementById('mentorIdInput').value = mentorId;
+      document.getElementById('modalMentorInfo').innerHTML = `
+        <div class="avatar avatar-md" style="background:var(--gradient-primary);display:grid;place-items:center;color:#fff;font-weight:700;">${name.charAt(0)}</div>
+        <div><div style="font-weight:700;">${name}</div><div style="font-size:0.82rem;color:var(--text-muted)">${title || ''} ${company ? '· ' + company : ''}</div></div>`;
+      document.getElementById('requestModal').classList.add('open');
+    }
+    function closeModal() { document.getElementById('requestModal').classList.remove('open'); }
+    document.getElementById('requestForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        await api.sendRequest({ mentor_id: +document.getElementById('mentorIdInput').value, message: document.getElementById('requestMessage').value, goals: document.getElementById('requestGoals').value });
+        showToast('Request sent successfully! 🚀', 'success');
+        closeModal();
+        document.getElementById('requestForm').reset();
+      } catch (err) { showToast(err.message, 'error'); }
+    });
+    init();
+  </script>
+</body>
+
+</html>

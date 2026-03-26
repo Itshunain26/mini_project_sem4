@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MentorHub — Student Mentorship & Guidance Portal</title>
+  <meta name="description"
+    content="Connect with expert mentors for academic and career guidance. Find mentors, schedule sessions, and accelerate your growth." />
+  <link rel="stylesheet" href="css/global.css" />
+  <style>
+    /* Landing-specific */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 20px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(108, 99, 255, 0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .orb-1 {
+      width: 400px;
+      height: 400px;
+      background: rgba(108, 99, 255, 0.12);
+      top: -100px;
+      left: -100px;
+    }
+
+    .orb-2 {
+      width: 300px;
+      height: 300px;
+      background: rgba(0, 212, 170, 0.08);
+      bottom: -80px;
+      right: -80px;
+      animation-delay: -3s;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(108, 99, 255, 0.12);
+      border: 1px solid rgba(108, 99, 255, 0.3);
+      padding: 6px 16px;
+      border-radius: var(--radius-full);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--accent-primary);
+      margin-bottom: 28px;
+    }
+
+    .hero h1 {
+      margin-bottom: 20px;
+    }
+
+    .hero p {
+      font-size: 1.15rem;
+      max-width: 600px;
+      margin: 0 auto 36px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 48px;
+      justify-content: center;
+      margin-top: 64px;
+      flex-wrap: wrap;
+    }
+
+    .hero-stat {
+      text-align: center;
+    }
+
+    .hero-stat-num {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      font-weight: 800;
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-stat-label {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Features */
+    .features {
+      padding: 100px 20px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      max-width: 1100px;
+      margin: 48px auto 0;
+    }
+
+    @media (max-width: 900px) {
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 32px;
+      transition: var(--transition);
+    }
+
+    .feature-card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .feature-icon {
+      font-size: 2.2rem;
+      margin-bottom: 20px;
+    }
+
+    .feature-card h3 {
+      margin-bottom: 10px;
+    }
+
+    /* Mentors Spotlight */
+    .mentors-section {
+      padding: 80px 20px;
+      background: linear-gradient(to bottom, transparent, rgba(108, 99, 255, 0.04), transparent);
+    }
+
+    .mentors-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 20px;
+      max-width: 1100px;
+      margin: 48px auto 0;
+    }
+
+    .mentor-spotlight-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 28px;
+      text-align: center;
+      transition: var(--transition);
+    }
+
+    .mentor-spotlight-card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-4px);
+    }
+
+    .mentor-spotlight-card .avatar {
+      margin: 0 auto 16px;
+    }
+
+    .mentor-name {
+      font-weight: 700;
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+    }
+
+    .mentor-role {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin: 4px 0 12px;
+    }
+
+    .mentor-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+      margin-top: 14px;
+    }
+
+    .tag {
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      background: rgba(108, 99, 255, 0.1);
+      color: var(--accent-primary);
+      border: 1px solid rgba(108, 99, 255, 0.2);
+    }
+
+    /* CTA */
+    .cta {
+      padding: 100px 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .cta-card {
+      background: var(--gradient-primary);
+      border-radius: var(--radius-xl);
+      padding: 64px 40px;
+      max-width: 800px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.15) 0%, transparent 60%);
+    }
+
+    .cta-card h2 {
+      font-family: var(--font-display);
+      font-size: 2.2rem;
+      margin-bottom: 16px;
+      color: #fff;
+    }
+
+    .cta-card p {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 1rem;
+      margin-bottom: 32px;
+    }
+
+    .cta-actions {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-white {
+      background: #fff;
+      color: var(--accent-primary);
+      font-weight: 700;
+    }
+
+    .btn-white:hover {
+      background: rgba(255, 255, 255, 0.9);
+      transform: translateY(-2px);
+    }
+
+    .btn-outline-white {
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      color: #fff;
+      background: transparent;
+    }
+
+    .btn-outline-white:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .section-center {
+      text-align: center;
+    }
+
+    .section-subtitle {
+      color: var(--text-secondary);
+      max-width: 540px;
+      margin: 12px auto 0;
+    }
+
+    /* Footer */
+    .footer {
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border);
+      padding: 48px 20px 24px;
+    }
+
+    .footer-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 24px;
+    }
+
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      transition: var(--transition);
+    }
+
+    .footer-links a:hover {
+      color: var(--text-primary);
+    }
+
+    .footer-copy {
+      width: 100%;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-top: 24px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <a href="/" class="navbar-brand">
+      <div class="brand-icon"></div>
+      MentorHub
+    </a>
+    <div class="navbar-links">
+      <a href="#features">Features</a>
+      <a href="#mentors">Mentors</a>
+      <a href="login.html">Login</a>
+      <a href="register.html" class="btn btn-primary btn-sm">Get Started</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-orb orb-1"></div>
+    <div class="hero-orb orb-2"></div>
+    <div>
+      <div class="hero-badge">✨ Connecting Students with Expert Mentors</div>
+      <h1>
+        Unlock Your Potential<br />
+        with <span class="text-gradient">Expert Guidance</span>
+      </h1>
+      <p>Connect with industry leaders and academics who will mentor you through your academic journey and career
+        aspirations.</p>
+      <div class="hero-actions">
+        <a href="register.html" class="btn btn-primary btn-lg">Start for Free <span>→</span></a>
+        <a href="find-mentors.html" class="btn btn-ghost btn-lg">Browse Mentors</a>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="hero-stat-num" data-count="500">0</div>
+          <div class="hero-stat-label">Expert Mentors</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-num" data-count="3200">0</div>
+          <div class="hero-stat-label">Students Guided</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-num" data-count="12000">0</div>
+          <div class="hero-stat-label">Sessions Completed</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-num" data-count="98">0</div>
+          <div class="hero-stat-label">% Satisfaction Rate</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-center">
+        <h2>Everything You Need to <span class="text-gradient">Grow</span></h2>
+        <p class="section-subtitle">A comprehensive platform built for meaningful mentorship experiences.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card fade-in">
+          <div class="feature-icon">🔍</div>
+          <h3>Smart Mentor Discovery</h3>
+          <p>Find mentors by expertise, industry, rating, and availability. Our smart filters help you find the perfect
+            match.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">📅</div>
+          <h3>Easy Session Scheduling</h3>
+          <p>Book sessions with a few clicks, get reminders, and join meetings seamlessly with integrated meeting links.
+          </p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">💬</div>
+          <h3>Built-in Messaging</h3>
+          <p>Stay connected with your mentor via our secure in-app messaging system. No external apps needed.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">📈</div>
+          <h3>Progress Tracking</h3>
+          <p>Set goals, track milestones, and visualize your growth journey with detailed progress analytics.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">📚</div>
+          <h3>Curated Resources</h3>
+          <p>Access a library of guides, articles, videos, and tools shared by mentors across all domains.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">⭐</div>
+          <h3>Verified Reviews</h3>
+          <p>Make informed decisions with verified session feedback and honest ratings from fellow students.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Mentors Spotlight -->
+  <section class="mentors-section" id="mentors">
+    <div class="container">
+      <div class="section-center">
+        <h2>Meet Our <span class="text-gradient">Top Mentors</span></h2>
+        <p class="section-subtitle">Industry leaders passionate about student success.</p>
+      </div>
+      <div class="mentors-grid">
+        <div class="mentor-spotlight-card">
+          <div class="avatar avatar-lg"
+            style="margin:0 auto 16px;background:linear-gradient(135deg,#6c63ff,#a855f7);display:grid;place-items:center;font-size:1.5rem;color:#fff;font-weight:700;">
+            S</div>
+          <div class="mentor-name">Dr. Sarah Mitchell</div>
+          <div class="mentor-role">AI Research Lead · Google DeepMind</div>
+          <div class="stars">★★★★★</div>
+          <div class="mentor-tags"><span class="tag">AI/ML</span><span class="tag">Research</span><span class="tag">PhD
+              Guidance</span></div>
+        </div>
+        <div class="mentor-spotlight-card">
+          <div class="avatar avatar-lg"
+            style="margin:0 auto 16px;background:linear-gradient(135deg,#00d4aa,#06b6d4);display:grid;place-items:center;font-size:1.5rem;color:#fff;font-weight:700;">
+            J</div>
+          <div class="mentor-name">James Rodriguez</div>
+          <div class="mentor-role">Senior SWE · Meta</div>
+          <div class="stars">★★★★★</div>
+          <div class="mentor-tags"><span class="tag">Web Dev</span><span class="tag">System Design</span><span
+              class="tag">Career</span></div>
+        </div>
+        <div class="mentor-spotlight-card">
+          <div class="avatar avatar-lg"
+            style="margin:0 auto 16px;background:linear-gradient(135deg,#f59e0b,#ef4444);display:grid;place-items:center;font-size:1.5rem;color:#fff;font-weight:700;">
+            A</div>
+          <div class="mentor-name">Aisha Patel</div>
+          <div class="mentor-role">Product Manager · Stripe</div>
+          <div class="stars">★★★★☆</div>
+          <div class="mentor-tags"><span class="tag">Product</span><span class="tag">Startups</span><span
+              class="tag">UX</span></div>
+        </div>
+        <div class="mentor-spotlight-card">
+          <div class="avatar avatar-lg"
+            style="margin:0 auto 16px;background:linear-gradient(135deg,#8b5cf6,#ec4899);display:grid;place-items:center;font-size:1.5rem;color:#fff;font-weight:700;">
+            M</div>
+          <div class="mentor-name">Marcus Chen</div>
+          <div class="mentor-role">Data Scientist · Netflix</div>
+          <div class="stars">★★★★★</div>
+          <div class="mentor-tags"><span class="tag">Data Science</span><span class="tag">Analytics</span><span
+              class="tag">Python</span></div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:40px;"><a href="find-mentors.html" class="btn btn-secondary btn-lg">View
+          All Mentors →</a></div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta">
+    <div class="cta-card">
+      <h2>Ready to Transform Your Future?</h2>
+      <p>Join thousands of students who have accelerated their growth with MentorHub. Start your mentorship journey
+        today — it's free.</p>
+      <div class="cta-actions">
+        <a href="register.html" class="btn btn-white btn-lg">Get Started Free</a>
+        <a href="login.html" class="btn btn-outline-white btn-lg">Sign In</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="brand-icon">🎓</div> MentorHub
+      </div>
+      <div class="footer-links">
+        <a href="#features">Features</a>
+        <a href="#mentors">Mentors</a>
+        <a href="register.html">Sign Up</a>
+        <a href="login.html">Login</a>
+      </div>
+    </div>
+    <p class="footer-copy">© 2024 MentorHub. Built for students, by educators. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // Animated counter
+    const counters = document.querySelectorAll('[data-count]');
+    const animateCounters = () => {
+      counters.forEach(el => {
+        const target = +el.dataset.count;
+        const step = target / 80;
+        let current = 0;
+        const timer = setInterval(() => {
+          current = Math.min(current + step, target);
+          el.textContent = Math.floor(current).toLocaleString() + (el.closest('.hero-stat').querySelector('.hero-stat-label').textContent.includes('%') ? '%' : '+');
+          if (current >= target) clearInterval(timer);
+        }, 20);
+      });
+    };
+    const heroStats = document.querySelector('.hero-stats');
+    const observer = new IntersectionObserver((entries) => { if (entries[0].isIntersecting) { animateCounters(); observer.disconnect(); } }, { threshold: 0.3 });
+    if (heroStats) observer.observe(heroStats);
+
+    // Navbar scroll effect
+    window.addEventListener('scroll', () => {
+      document.querySelector('.navbar').style.background = window.scrollY > 40 ? 'rgba(10,10,15,0.97)' : 'rgba(10,10,15,0.85)';
+    });
+  </script>
+</body>
+
+</html>
